@@ -1,0 +1,132 @@
+// Prisma Schema for Plataforma Inteligente de Apoyo Académico COCID
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum AnalysisStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum AcademicLevel {
+  UNDERGRADUATE
+  MASTER
+  DOCTORATE
+  ALL
+}
+
+model User {
+  id            String @id @default(uuid())
+  externalId    String? @unique
+  nombre        String
+  apellido      String
+  email         String @unique
+  password_hash String
+  rol           Role @default(STUDENT)
+  activo        Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  similarityReports SimilarityReport[]
+  lsmSessions LsmSession[]
+  studentProfile StudentProfile?
+  recommendations Recommendation[]
+  @@map("users")
+}
+
+// ==========================================
+// MÓDULO 1: SIMILITUD ACADÉMICA
+// ==========================================
+model SimilarityReport {
+  id            String         @id @default(uuid())
+  documentTitle String
+  fileUrl       String?
+  totalWords    Int            @default(0)
+  overallScore  Float          @default(0.0)
+  status        AnalysisStatus @default(PENDING)
+  matchesData   Json?          // Stores detailed match fragments and sources
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("similarity_reports")
+}
+
+// ==========================================
+// MÓDULO 2: LENGUA DE SEÑAS MEXICANA (LSM)
+// ==========================================
+model LsmSession {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionType String   @default("PRACTICE") // PRACTICE | EVALUATION
+  totalSigns  Int      @default(0)
+  accuracy    Float    @default(0.0)
+  logsData    Json?    // Stores gesture predictions and timestamps
+  createdAt   DateTime @default(now())
+
+  @@map("lsm_sessions")
+}
+
+// ==========================================
+// MÓDULO 3: BECAS Y POSGRADOS
+// ==========================================
+model StudentProfile {
+  id                 String        @id @default(uuid())
+  userId             String        @unique
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gpa                Float
+  academicLevel      AcademicLevel @default(UNDERGRADUATE)
+  studyField         String
+  researchInterests  String[]
+  languages          String[]
+  socioeconomicLevel String?
+  updatedAt          DateTime      @updatedAt
+
+  @@map("student_profiles")
+}
+
+model Scholarship {
+  id              String           @id @default(uuid())
+  title           String
+  institution     String
+  academicLevel   AcademicLevel    @default(ALL)
+  country         String
+  coverage        String
+  deadline        DateTime
+  requirements    String[]
+  applicationUrl  String
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  recommendations Recommendation[]
+
+  @@map("scholarships")
+}
+
+model Recommendation {
+  id            String      @id @default(uuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scholarshipId String
+  scholarship   Scholarship @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+  matchScore    Float       // Score calculated by AI recommender
+  matchedAt     DateTime    @default(now())
+
+  @@map("recommendations")
+}

@@ -31,3 +31,23 @@ export interface ApiResponse<T = unknown> {
   message?: string;
   timestamp?: string;
 }
+
+// DTOs para gestión administrativa de usuarios
+export interface CreateUserDTO {
+  nombre: string;
+  apellido: string;
+  email: string;
+  password: string;
+  rol: Role;
+}
+
+export interface UpdateUserDTO {
+  nombre?: string;
+  apellido?: string;
+  email?: string;
+  rol?: Role;
+}
+
+export interface UpdateUserStatusDTO {
+  activo: boolean;
+}

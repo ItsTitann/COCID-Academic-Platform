@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { ROUTES } from '../../routes/routes.config';
@@ -10,7 +10,7 @@ export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // Field-level errors
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [serverError, setServerError] = useState<string | null>(null);
@@ -70,7 +70,7 @@ export const LoginPage: React.FC = () => {
       </div>
 
       {serverError && (
-        <div className="mb-5 p-3.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs flex items-start space-x-2.5 animate-fadeIn">
+        <div className="mb-5 p-3.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs flex items-start space-x-2.5">
           <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
           <span className="leading-relaxed">{serverError}</span>
         </div>
@@ -104,7 +104,7 @@ export const LoginPage: React.FC = () => {
             />
           </div>
           {errors.email && (
-            <p className="mt-1.5 text-xs text-red-400 flex items-center space-x-1">
+            <p className="mt-1.5 text-xs text-red-400">
               <span>{errors.email}</span>
             </p>
           )}
@@ -145,7 +145,7 @@ export const LoginPage: React.FC = () => {
             </button>
           </div>
           {errors.password && (
-            <p className="mt-1.5 text-xs text-red-400 flex items-center space-x-1">
+            <p className="mt-1.5 text-xs text-red-400">
               <span>{errors.password}</span>
             </p>
           )}
@@ -170,16 +170,6 @@ export const LoginPage: React.FC = () => {
           )}
         </button>
       </form>
-
-      <div className="mt-6 pt-5 border-t border-slate-700/60 text-center text-xs text-slate-400">
-        ¿Aún no cuentas con un registro institucional?{' '}
-        <Link
-          to={ROUTES.REGISTER}
-          className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors ml-1"
-        >
-          Registrarse
-        </Link>
-      </div>
     </div>
   );
 };

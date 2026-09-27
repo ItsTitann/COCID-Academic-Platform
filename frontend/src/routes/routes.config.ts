@@ -1,8 +1,8 @@
 export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
-  REGISTER: '/registro',
   DASHBOARD: '/dashboard',
+  USERS: '/usuarios',
   SIMILARITY: {
     ROOT: '/similitud',
     ANALYZE: '/similitud/analizar',

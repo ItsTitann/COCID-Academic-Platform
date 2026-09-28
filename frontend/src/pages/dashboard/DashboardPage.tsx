@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, ShieldCheck } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { ModuleCards } from '../../components/dashboard/ModuleCards';
 import { AdminAnalytics } from '../../components/dashboard/AdminAnalytics';
@@ -58,15 +58,6 @@ export const DashboardPage: React.FC = () => {
           <AcademicBottomBanner role={role} />
         </>
       )}
-
-      {/* Pie Institucional Común */}
-      <div className="pt-4 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
-        <span>© {new Date().getFullYear()} Colegio Universitario Científico de Datos • Plataforma Inteligente COCID</span>
-        <div className="flex items-center space-x-2">
-          <ShieldCheck className="w-4 h-4 text-[#14B8A6]" />
-          <span>Infraestructura Segura de Inteligencia Artificial</span>
-        </div>
-      </div>
     </div>
   );
 };

@@ -43,6 +43,7 @@ export const AppRoutes: React.FC = () => {
 
           {/* Módulos de IA */}
           <Route path={ROUTES.SIMILARITY.ROOT} element={<SimilarityPage />} />
+          <Route path="/similarity" element={<SimilarityPage />} />
           <Route path={ROUTES.LSM.ROOT} element={<LsmPage />} />
           <Route path={ROUTES.SCHOLARSHIPS.ROOT} element={<ScholarshipsPage />} />
         </Route>

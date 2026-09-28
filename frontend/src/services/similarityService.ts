@@ -1,24 +1,51 @@
 import { apiClient } from './api/apiClient';
 import type { ApiResponse } from '../types/api.types';
-import type { SimilarityAnalysisReport } from '../types/similarity.types';
+import type { SimilarityReport } from '../types/similarity.types';
 
 export const similarityService = {
-  analyzeDocument: async (file: File): Promise<SimilarityAnalysisReport> => {
+  /**
+   * Carga un archivo de manuscrito (PDF, DOCX, TXT)
+   * POST /api/similarity/upload
+   */
+  uploadDocument: async (file: File): Promise<ApiResponse<SimilarityReport>> => {
     const formData = new FormData();
-    formData.append('document', file);
-    const res = await apiClient.post<unknown, ApiResponse<SimilarityAnalysisReport>>('/similarity/analyze', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    formData.append('file', file);
+    return apiClient.post('/similarity/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
-    return res.data;
   },
 
-  getReport: async (reportId: string): Promise<SimilarityAnalysisReport> => {
-    const res = await apiClient.get<unknown, ApiResponse<SimilarityAnalysisReport>>(`/similarity/reports/${reportId}`);
-    return res.data;
+  /**
+   * Inicia el análisis NLP del documento
+   * POST /api/similarity/analyze/:id
+   */
+  analyzeDocument: async (reportId: string): Promise<ApiResponse<SimilarityReport>> => {
+    return apiClient.post(`/similarity/analyze/${reportId}`);
   },
 
-  listReports: async (): Promise<SimilarityAnalysisReport[]> => {
-    const res = await apiClient.get<unknown, ApiResponse<SimilarityAnalysisReport[]>>('/similarity/reports');
-    return res.data;
+  /**
+   * Obtiene los resultados de un análisis específico
+   * GET /api/similarity/result/:id
+   */
+  getReportResult: async (reportId: string): Promise<ApiResponse<SimilarityReport>> => {
+    return apiClient.get(`/similarity/result/${reportId}`);
+  },
+
+  /**
+   * Obtiene el listado de reportes previos del usuario
+   * GET /api/similarity/reports
+   */
+  getUserReports: async (): Promise<ApiResponse<SimilarityReport[]>> => {
+    return apiClient.get('/similarity/reports');
+  },
+
+  /**
+   * Elimina un reporte del historial
+   * DELETE /api/similarity/reports/:id
+   */
+  deleteReport: async (reportId: string): Promise<ApiResponse<null>> => {
+    return apiClient.delete(`/similarity/reports/${reportId}`);
   },
 };

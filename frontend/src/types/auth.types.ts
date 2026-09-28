@@ -1,5 +1,11 @@
 export type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT';
 
+export interface UserProfile {
+  apellidoMaterno?: string | null;
+  telefono?: string | null;
+  avatarUrl?: string | null;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -9,6 +15,7 @@ export interface User {
   activo: boolean;
   createdAt: string;
   updatedAt?: string;
+  profile?: UserProfile | null;
 }
 
 export interface LoginCredentials {

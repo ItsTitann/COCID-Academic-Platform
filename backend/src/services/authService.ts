@@ -177,6 +177,13 @@ const isMatch = await bcrypt.compare(
         activo: true,
         createdAt: true,
         updatedAt: true,
+        profile: {
+          select: {
+            apellidoMaterno: true,
+            telefono: true,
+            avatarUrl: true,
+          },
+        },
       },
     });
 

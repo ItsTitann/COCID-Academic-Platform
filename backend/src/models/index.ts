@@ -9,6 +9,12 @@ export interface AuthenticatedUser {
   activo: boolean;
 }
 
+export interface UserProfileData {
+  apellidoMaterno?: string | null;
+  telefono?: string | null;
+  avatarUrl?: string | null;
+}
+
 export interface UserResponse {
   id: string;
   email: string;
@@ -18,6 +24,7 @@ export interface UserResponse {
   activo: boolean;
   createdAt: Date;
   updatedAt?: Date;
+  profile?: UserProfileData | null;
 }
 
 export interface AuthSuccessPayload {
@@ -30,6 +37,19 @@ export interface ApiResponse<T = unknown> {
   data: T;
   message?: string;
   timestamp?: string;
+}
+
+// DTOs para gestión de perfil de usuario
+export interface UpdateProfileDTO {
+  nombre?: string;
+  apellido?: string;
+  apellidoMaterno?: string;
+  telefono?: string;
+}
+
+export interface ChangePasswordDTO {
+  currentPassword: string;
+  newPassword: string;
 }
 
 // DTOs para gestión administrativa de usuarios

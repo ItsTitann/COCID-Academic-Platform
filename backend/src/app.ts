@@ -1,5 +1,6 @@
 import express, { Express } from 'express';
 import cors from 'cors';
+import path from 'path';
 import routes from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -13,6 +14,9 @@ export const createApp = (): Express => {
   }));
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+  // Static uploads serving
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Routes
   app.use('/api', routes);

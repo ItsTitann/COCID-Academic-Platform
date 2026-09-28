@@ -2,6 +2,7 @@ export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
   DASHBOARD: '/dashboard',
+  PROFILE: '/perfil',
   USERS: '/usuarios',
   SIMILARITY: {
     ROOT: '/similitud',

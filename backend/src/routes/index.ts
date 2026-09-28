@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import authRoutes from './authRoutes.js';
+import profileRoutes from './profileRoutes.js';
 import userRoutes from './userRoutes.js';
 import similarityRoutes from './similarityRoutes.js';
 import lsmRoutes from './lsmRoutes.js';
@@ -9,6 +10,7 @@ const router = Router();
 
 // Module Routes
 router.use('/auth', authRoutes);
+router.use('/profile', profileRoutes);
 router.use('/users', userRoutes);
 router.use('/similarity', similarityRoutes);
 router.use('/lsm', lsmRoutes);

@@ -7,6 +7,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { AdminRoute } from './AdminRoute';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
+import { ProfilePage } from '../pages/profile/ProfilePage';
 import { UsersPage } from '../pages/users/UsersPage';
 import { SimilarityPage } from '../pages/similarity/SimilarityPage';
 import { LsmPage } from '../pages/lsm/LsmPage';
@@ -27,6 +28,9 @@ export const AppRoutes: React.FC = () => {
           <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.DASHBOARD} replace />} />
           <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
           
+          {/* Perfil Institucional de Usuario (ADMIN, TEACHER, STUDENT) */}
+          <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
+
           {/* Módulo Administrativo: Solo para ADMIN */}
           <Route
             path={ROUTES.USERS}

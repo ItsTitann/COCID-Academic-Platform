@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { prisma } from '../prisma/client.js';
+import { auditService } from './auditService.js';
 import type { Role, UserResponse, CreateUserDTO, UpdateUserDTO } from '../models/index.js';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -31,7 +32,7 @@ export const userService = {
   /**
    * Crea un nuevo usuario institucional desde el panel administrativo.
    */
-  createUser: async (data: CreateUserDTO): Promise<UserResponse> => {
+  createUser: async (data: CreateUserDTO, currentAdminId?: string): Promise<UserResponse> => {
     const { nombre, apellido, email, password, rol } = data;
 
     // 1. Validaciones de entrada
@@ -86,6 +87,31 @@ export const userService = {
       },
     });
 
+    // 4. Registro en Bitácora de Auditoría si la acción fue realizada por un admin
+    if (currentAdminId) {
+      const admin = await prisma.user.findUnique({
+        where: { id: currentAdminId },
+        select: { nombre: true, apellido: true, rol: true },
+      });
+
+      await auditService.createAuditLog({
+        actorId: currentAdminId,
+        actorName: admin ? `${admin.nombre} ${admin.apellido}` : 'Administrador',
+        actorRole: admin?.rol || 'ADMIN',
+        action: 'CREAR_USUARIO',
+        module: 'GESTION_USUARIOS',
+        targetUserId: user.id,
+        targetUserName: `${user.nombre} ${user.apellido}`,
+        entityType: 'User',
+        entityId: user.id,
+        description: `El administrador creó al usuario ${user.nombre} ${user.apellido} (${user.email}) con rol ${user.rol}.`,
+        metadata: {
+          email: user.email,
+          rol: user.rol,
+        },
+      });
+    }
+
     return user;
   },
 
@@ -103,20 +129,29 @@ export const userService = {
     }
 
     const updatePayload: { nombre?: string; apellido?: string; email?: string; rol?: Role } = {};
+    const changesSummary: Record<string, { before: string; after: string }> = {};
 
     // 2. Validar nombre y apellido si se proporcionan
     if (data.nombre !== undefined) {
-      if (!data.nombre.trim() || data.nombre.trim().length < 2) {
+      const cleanNombre = data.nombre.trim();
+      if (!cleanNombre || cleanNombre.length < 2) {
         throw new Error('El nombre debe tener al menos 2 caracteres');
       }
-      updatePayload.nombre = data.nombre.trim();
+      if (cleanNombre !== targetUser.nombre) {
+        changesSummary.nombre = { before: targetUser.nombre, after: cleanNombre };
+      }
+      updatePayload.nombre = cleanNombre;
     }
 
     if (data.apellido !== undefined) {
-      if (!data.apellido.trim() || data.apellido.trim().length < 2) {
+      const cleanApellido = data.apellido.trim();
+      if (!cleanApellido || cleanApellido.length < 2) {
         throw new Error('El apellido debe tener al menos 2 caracteres');
       }
-      updatePayload.apellido = data.apellido.trim();
+      if (cleanApellido !== targetUser.apellido) {
+        changesSummary.apellido = { before: targetUser.apellido, after: cleanApellido };
+      }
+      updatePayload.apellido = cleanApellido;
     }
 
     // 3. Validar correo electrónico si cambia
@@ -134,6 +169,7 @@ export const userService = {
         if (emailExists && emailExists.id !== targetUserId) {
           throw new Error('El correo electrónico ya está en uso por otro usuario');
         }
+        changesSummary.email = { before: targetUser.email, after: normalizedEmail };
         updatePayload.email = normalizedEmail;
       }
     }
@@ -144,7 +180,6 @@ export const userService = {
         throw new Error('El rol asignado no es válido');
       }
 
-      // Si el usuario objetivo es ADMIN y se le intenta degradar a otro rol:
       if (targetUser.rol === 'ADMIN' && data.rol !== 'ADMIN') {
         const otherActiveAdminsCount = await prisma.user.count({
           where: {
@@ -159,6 +194,9 @@ export const userService = {
         }
       }
 
+      if (data.rol !== targetUser.rol) {
+        changesSummary.rol = { before: targetUser.rol, after: data.rol };
+      }
       updatePayload.rol = data.rol;
     }
 
@@ -177,6 +215,30 @@ export const userService = {
         updatedAt: true,
       },
     });
+
+    // 6. Registrar en AuditLog
+    if (currentAdminId) {
+      const admin = await prisma.user.findUnique({
+        where: { id: currentAdminId },
+        select: { nombre: true, apellido: true, rol: true },
+      });
+
+      await auditService.createAuditLog({
+        actorId: currentAdminId,
+        actorName: admin ? `${admin.nombre} ${admin.apellido}` : 'Administrador',
+        actorRole: admin?.rol || 'ADMIN',
+        action: 'EDITAR_USUARIO',
+        module: 'GESTION_USUARIOS',
+        targetUserId: updatedUser.id,
+        targetUserName: `${updatedUser.nombre} ${updatedUser.apellido}`,
+        entityType: 'User',
+        entityId: updatedUser.id,
+        description: `El administrador actualizó los datos del usuario ${updatedUser.nombre} ${updatedUser.apellido}.`,
+        metadata: {
+          changes: changesSummary,
+        },
+      });
+    }
 
     return updatedUser;
   },
@@ -230,6 +292,35 @@ export const userService = {
       },
     });
 
+    // 5. Registrar en AuditLog
+    if (currentAdminId) {
+      const admin = await prisma.user.findUnique({
+        where: { id: currentAdminId },
+        select: { nombre: true, apellido: true, rol: true },
+      });
+
+      const action = active ? 'ACTIVAR_USUARIO' : 'DESACTIVAR_USUARIO';
+      const description = active
+        ? `El administrador activó la cuenta del usuario ${updatedUser.nombre} ${updatedUser.apellido}.`
+        : `El administrador desactivó la cuenta del usuario ${updatedUser.nombre} ${updatedUser.apellido}.`;
+
+      await auditService.createAuditLog({
+        actorId: currentAdminId,
+        actorName: admin ? `${admin.nombre} ${admin.apellido}` : 'Administrador',
+        actorRole: admin?.rol || 'ADMIN',
+        action,
+        module: 'GESTION_USUARIOS',
+        targetUserId: updatedUser.id,
+        targetUserName: `${updatedUser.nombre} ${updatedUser.apellido}`,
+        entityType: 'User',
+        entityId: updatedUser.id,
+        description,
+        metadata: {
+          activo: active,
+        },
+      });
+    }
+
     return updatedUser;
   },
 
@@ -265,7 +356,32 @@ export const userService = {
       }
     }
 
-    // 4. Eliminar de la base de datos
+    // 4. Registrar en AuditLog antes de eliminar (para conservar referencia del usuario)
+    if (currentAdminId) {
+      const admin = await prisma.user.findUnique({
+        where: { id: currentAdminId },
+        select: { nombre: true, apellido: true, rol: true },
+      });
+
+      await auditService.createAuditLog({
+        actorId: currentAdminId,
+        actorName: admin ? `${admin.nombre} ${admin.apellido}` : 'Administrador',
+        actorRole: admin?.rol || 'ADMIN',
+        action: 'ELIMINAR_USUARIO',
+        module: 'GESTION_USUARIOS',
+        targetUserId: targetUserId,
+        targetUserName: `${targetUser.nombre} ${targetUser.apellido}`,
+        entityType: 'User',
+        entityId: targetUserId,
+        description: `El administrador eliminó permanentemente al usuario ${targetUser.nombre} ${targetUser.apellido} (${targetUser.email}).`,
+        metadata: {
+          email: targetUser.email,
+          rol: targetUser.rol,
+        },
+      });
+    }
+
+    // 5. Eliminar de la base de datos
     await prisma.user.delete({
       where: { id: targetUserId },
     });

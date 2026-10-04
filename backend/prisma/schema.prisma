@@ -30,6 +30,25 @@ enum AcademicLevel {
   ALL
 }
 
+enum ChangeRequestType {
+  PROFILE_UPDATE
+  PASSWORD_CHANGE
+}
+
+enum ChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  REQUEST_SUBMITTED
+  REQUEST_APPROVED
+  REQUEST_REJECTED
+  NEW_CHANGE_REQUEST
+  SYSTEM_ALERT
+}
+
 model User {
   id                 String              @id @default(uuid())
   externalId         String?             @unique
@@ -46,6 +65,11 @@ model User {
   studentProfile     StudentProfile?
   recommendations    Recommendation[]
   profile            UserProfile?
+  changeRequests     ChangeRequest[]     @relation("UserChangeRequests")
+  reviewedRequests   ChangeRequest[]     @relation("AdminReviewedRequests")
+  notifications      Notification[]
+  auditLogsActed     AuditLog[]          @relation("AuditLogsActed")
+  auditLogsTargeted  AuditLog[]          @relation("AuditLogsTargeted")
 
   @@map("users")
 }
@@ -153,3 +177,74 @@ model Recommendation {
 
   @@map("recommendations")
 }
+
+// ==========================================
+// MÓDULO 4: SOLICITUDES DE CAMBIO Y NOTIFICACIONES
+// ==========================================
+model ChangeRequest {
+  id              String              @id @default(uuid())
+  userId          String
+  user            User                @relation("UserChangeRequests", fields: [userId], references: [id], onDelete: Cascade)
+  type            ChangeRequestType
+  status          ChangeRequestStatus @default(PENDING)
+  requestedData   Json?               // { nombre?, apellido?, apellidoMaterno?, telefono? }
+  passwordHash    String?             // Only bcrypt hash of the new password (NEVER plain text!)
+  reviewedById    String?
+  reviewer        User?               @relation("AdminReviewedRequests", fields: [reviewedById], references: [id], onDelete: SetNull)
+  rejectionReason String?
+  createdAt       DateTime            @default(now())
+  reviewedAt      DateTime?
+
+  @@index([userId])
+  @@index([status])
+  @@map("change_requests")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      NotificationType @default(SYSTEM_ALERT)
+  isRead    Boolean          @default(false)
+  relatedId String?
+  expiresAt DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([relatedId])
+  @@map("notifications")
+}
+
+// ==========================================
+// MÓDULO 5: BITÁCORA DE AUDITORÍA PERMANENTE
+// ==========================================
+model AuditLog {
+  id             String   @id @default(uuid())
+  actorId        String?
+  actorName      String?
+  actorRole      String?
+  action         String
+  module         String
+  targetUserId   String?
+  targetUserName String?
+  entityType     String?
+  entityId       String?
+  description    String
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  actor      User? @relation("AuditLogsActed", fields: [actorId], references: [id], onDelete: SetNull)
+  targetUser User? @relation("AuditLogsTargeted", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([actorId])
+  @@index([targetUserId])
+  @@index([module])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+

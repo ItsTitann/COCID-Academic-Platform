@@ -9,18 +9,30 @@ import {
   X, 
   CheckCircle2, 
   AlertCircle, 
-  Loader2 
+  Loader2,
+  Clock,
+  Send
 } from 'lucide-react';
 import type { User } from '../../types/auth.types';
+import type { ChangeRequestRecord } from '../../types/changeRequest.types';
 import { useAuth } from '../../hooks/useAuth';
 import { profileService } from '../../services/profileService';
+import { changeRequestService } from '../../services/changeRequestService';
 
 interface PersonalInformationProps {
   user: User | null;
+  pendingRequest?: ChangeRequestRecord | null;
+  onRequestSubmitted?: () => void;
 }
 
-export const PersonalInformation: React.FC<PersonalInformationProps> = ({ user }) => {
+export const PersonalInformation: React.FC<PersonalInformationProps> = ({ 
+  user,
+  pendingRequest,
+  onRequestSubmitted
+}) => {
   const { refreshProfile } = useAuth();
+  const isAdmin = user?.rol === 'ADMIN';
+
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -69,19 +81,35 @@ export const PersonalInformation: React.FC<PersonalInformationProps> = ({ user }
 
     setIsSaving(true);
     try {
-      await profileService.updateProfile({
-        nombre: nombre.trim(),
-        apellido: apellidoPaterno.trim(),
-        apellidoMaterno: apellidoMaterno.trim() || undefined,
-        telefono: telefono.trim() || undefined,
-      });
+      if (isAdmin) {
+        // ADMIN: Actualización inmediata
+        await profileService.updateProfile({
+          nombre: nombre.trim(),
+          apellido: apellidoPaterno.trim(),
+          apellidoMaterno: apellidoMaterno.trim() || undefined,
+          telefono: telefono.trim() || undefined,
+        });
 
-      await refreshProfile();
+        await refreshProfile();
+        setSuccessMessage('Información personal guardada y sincronizada exitosamente.');
+      } else {
+        // TEACHER / STUDENT: Envío de solicitud de cambio
+        const res = await changeRequestService.requestProfileUpdate({
+          nombre: nombre.trim(),
+          apellido: apellidoPaterno.trim(),
+          apellidoMaterno: apellidoMaterno.trim() || undefined,
+          telefono: telefono.trim() || undefined,
+        });
 
-      setSuccessMessage('Información personal guardada y sincronizada exitosamente.');
+        setSuccessMessage(
+          res.message || 'Se ha enviado correctamente tu solicitud de cambio de información personal. Espera a que un administrador acepte tu petición.'
+        );
+        onRequestSubmitted?.();
+      }
+
       setIsEditing(false);
     } catch (err: unknown) {
-      const msg = (err as { message?: string })?.message || 'Ocurrió un error al actualizar los datos en PostgreSQL.';
+      const msg = (err as { message?: string })?.message || 'Ocurrió un error al procesar la solicitud.';
       setErrorMessage(msg);
     } finally {
       setIsSaving(false);
@@ -108,13 +136,59 @@ export const PersonalInformation: React.FC<PersonalInformationProps> = ({ user }
           <button
             type="button"
             onClick={() => setIsEditing(true)}
-            className="inline-flex items-center space-x-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition-colors self-start sm:self-auto cursor-pointer"
+            disabled={!isAdmin && !!pendingRequest}
+            className={`inline-flex items-center space-x-2 px-4 py-2 font-semibold rounded-xl text-xs transition-colors self-start sm:self-auto ${
+              !isAdmin && !!pendingRequest
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer'
+            }`}
           >
             <Edit3 className="w-3.5 h-3.5" />
-            <span>Editar información</span>
+            <span>{isAdmin ? 'Editar información' : 'Solicitar cambio'}</span>
           </button>
         )}
       </div>
+
+      {/* Banner de Solicitud Pendiente para TEACHER / STUDENT */}
+      {!isAdmin && pendingRequest && (
+        <div className="p-4 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs space-y-2 animate-fadeIn">
+          <div className="flex items-center space-x-2 font-bold text-amber-800">
+            <Clock className="w-4 h-4 text-[#D4AF37] shrink-0 animate-pulse" />
+            <span>Solicitud de modificación de perfil pendiente de revisión administrativa</span>
+          </div>
+          <p className="text-amber-700 leading-relaxed">
+            Has enviado una solicitud para modificar tus datos personales el{' '}
+            <strong className="font-mono">
+              {new Date(pendingRequest.createdAt).toLocaleDateString()} a las {new Date(pendingRequest.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </strong>
+            . Los cambios se aplicarán automáticamente cuando un administrador acepte tu petición.
+          </p>
+
+          {/* Valores solicitados */}
+          {pendingRequest.requestedData && (
+            <div className="mt-2 pt-2 border-t border-amber-200/60 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+              {pendingRequest.requestedData.nombre && (
+                <div>
+                  <span className="text-amber-600 font-semibold">Nombre solicitado:</span>{' '}
+                  <span className="font-medium text-amber-950">{pendingRequest.requestedData.nombre}</span>
+                </div>
+              )}
+              {pendingRequest.requestedData.apellido && (
+                <div>
+                  <span className="text-amber-600 font-semibold">Apellido solicitado:</span>{' '}
+                  <span className="font-medium text-amber-950">{pendingRequest.requestedData.apellido}</span>
+                </div>
+              )}
+              {pendingRequest.requestedData.telefono && (
+                <div>
+                  <span className="text-amber-600 font-semibold">Teléfono solicitado:</span>{' '}
+                  <span className="font-medium text-amber-950">{pendingRequest.requestedData.telefono}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Alertas */}
       {successMessage && (
@@ -267,12 +341,12 @@ export const PersonalInformation: React.FC<PersonalInformationProps> = ({ user }
               {isSaving ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Guardando cambios...</span>
+                  <span>{isAdmin ? 'Guardando cambios...' : 'Enviando solicitud...'}</span>
                 </>
               ) : (
                 <>
-                  <Save className="w-3.5 h-3.5" />
-                  <span>Guardar cambios</span>
+                  {isAdmin ? <Save className="w-3.5 h-3.5" /> : <Send className="w-3.5 h-3.5" />}
+                  <span>{isAdmin ? 'Guardar cambios' : 'Solicitar cambio'}</span>
                 </>
               )}
             </button>

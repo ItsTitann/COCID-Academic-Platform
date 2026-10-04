@@ -11,7 +11,9 @@ import {
   ChevronDown,
   ChevronRight,
   Sparkles,
-  Layers
+  Layers,
+  Bell,
+  ClipboardList
 } from 'lucide-react';
 import { ROUTES } from '../routes/routes.config';
 import { useAuth } from '../hooks/useAuth';
@@ -134,24 +136,58 @@ export const Sidebar: React.FC = () => {
               <span>Administración</span>
             </div>
 
-            <NavLink
-              to={ROUTES.USERS}
-              className={({ isActive }) =>
-                `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                  isActive
-                    ? 'bg-[#2563EB] text-white shadow-lg shadow-[#2563EB]/25 border-l-4 border-[#D4AF37]'
-                    : 'text-slate-300 hover:text-white hover:bg-[#1F2937]/70'
-                }`
-              }
-            >
-              <div className="flex items-center space-x-3">
-                <Users className="w-4 h-4 shrink-0 text-rose-400" />
-                <span>Gestión de Usuarios</span>
-              </div>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">
-                Admin
-              </span>
-            </NavLink>
+            <div className="space-y-1">
+              <NavLink
+                to={ROUTES.USERS}
+                className={({ isActive }) =>
+                  `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                    isActive
+                      ? 'bg-[#2563EB] text-white shadow-lg shadow-[#2563EB]/25 border-l-4 border-[#D4AF37]'
+                      : 'text-slate-300 hover:text-white hover:bg-[#1F2937]/70'
+                  }`
+                }
+              >
+                <div className="flex items-center space-x-3">
+                  <Users className="w-4 h-4 shrink-0 text-rose-400" />
+                  <span>Gestión de Usuarios</span>
+                </div>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">
+                  Admin
+                </span>
+              </NavLink>
+
+              <NavLink
+                to={ROUTES.NOTIFICATIONS}
+                className={({ isActive }) =>
+                  `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                    isActive
+                      ? 'bg-[#2563EB] text-white shadow-lg shadow-[#2563EB]/25 border-l-4 border-[#D4AF37]'
+                      : 'text-slate-300 hover:text-white hover:bg-[#1F2937]/70'
+                  }`
+                }
+              >
+                <div className="flex items-center space-x-3">
+                  <Bell className="w-4 h-4 shrink-0 text-[#D4AF37]" />
+                  <span>Notificaciones</span>
+                </div>
+              </NavLink>
+
+              <NavLink
+                to={ROUTES.AUDIT}
+                className={({ isActive }) =>
+                  `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                    isActive
+                      ? 'bg-[#2563EB] text-white shadow-lg shadow-[#2563EB]/25 border-l-4 border-[#D4AF37]'
+                      : 'text-slate-300 hover:text-white hover:bg-[#1F2937]/70'
+                  }`
+                }
+              >
+                <div className="flex items-center space-x-3">
+                  <ClipboardList className="w-4 h-4 shrink-0 text-[#14B8A6]" />
+                  <span>Bitácora de Auditoría</span>
+                </div>
+              </NavLink>
+            </div>
           </div>
         )}
       </nav>

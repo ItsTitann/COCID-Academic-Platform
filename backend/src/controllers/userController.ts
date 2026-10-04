@@ -24,8 +24,9 @@ export const userController = {
    * POST /api/users
    * Crea un nuevo usuario institucional.
    */
-  createUser: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  createUser: async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
+      const currentAdminId = req.user?.id || '';
       const { nombre, apellido, email, password, rol } = req.body;
       const user = await userService.createUser({
         nombre,
@@ -33,7 +34,7 @@ export const userController = {
         email,
         password,
         rol,
-      });
+      }, currentAdminId);
 
       res.status(201).json({
         success: true,

@@ -5,6 +5,9 @@ import userRoutes from './userRoutes.js';
 import similarityRoutes from './similarityRoutes.js';
 import lsmRoutes from './lsmRoutes.js';
 import scholarshipRoutes from './scholarshipRoutes.js';
+import changeRequestRoutes from './changeRequestRoutes.js';
+import notificationRoutes from './notificationRoutes.js';
+import auditRoutes from './auditRoutes.js';
 
 const router = Router();
 
@@ -15,6 +18,9 @@ router.use('/users', userRoutes);
 router.use('/similarity', similarityRoutes);
 router.use('/lsm', lsmRoutes);
 router.use('/scholarships', scholarshipRoutes);
+router.use('/change-requests', changeRequestRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/audit-logs', auditRoutes);
 
 // Health Check
 router.get('/health', (_req, res) => {

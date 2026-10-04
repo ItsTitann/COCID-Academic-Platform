@@ -3,7 +3,9 @@ export const ROUTES = {
   LOGIN: '/login',
   DASHBOARD: '/dashboard',
   PROFILE: '/perfil',
+  NOTIFICATIONS: '/notificaciones',
   USERS: '/usuarios',
+  AUDIT: '/auditoria',
   SIMILARITY: {
     ROOT: '/similitud',
     ANALYZE: '/similitud/analizar',

@@ -7,11 +7,28 @@ import {
   CheckCircle2, 
   AlertCircle, 
   Loader2, 
-  ShieldCheck 
+  ShieldCheck,
+  Clock,
+  Send
 } from 'lucide-react';
+import type { User } from '../../types/auth.types';
+import type { ChangeRequestRecord } from '../../types/changeRequest.types';
 import { profileService } from '../../services/profileService';
+import { changeRequestService } from '../../services/changeRequestService';
 
-export const SecurityCard: React.FC = () => {
+interface SecurityCardProps {
+  user?: User | null;
+  pendingRequest?: ChangeRequestRecord | null;
+  onRequestSubmitted?: () => void;
+}
+
+export const SecurityCard: React.FC<SecurityCardProps> = ({
+  user,
+  pendingRequest,
+  onRequestSubmitted,
+}) => {
+  const isAdmin = user?.rol === 'ADMIN';
+
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -46,17 +63,33 @@ export const SecurityCard: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const res = await profileService.changePassword({
-        currentPassword,
-        newPassword,
-      });
+      if (isAdmin) {
+        // ADMIN: Actualización inmediata
+        const res = await profileService.changePassword({
+          currentPassword,
+          newPassword,
+        });
 
-      setSuccessMessage(res.message || 'Contraseña actualizada exitosamente.');
+        setSuccessMessage(res.message || 'Contraseña actualizada exitosamente.');
+      } else {
+        // TEACHER / STUDENT: Solicitud de cambio de contraseña
+        const res = await changeRequestService.requestPasswordChange({
+          currentPassword,
+          newPassword,
+        });
+
+        setSuccessMessage(
+          res.message || 'Se ha enviado correctamente tu solicitud de cambio de contraseña. Espera a que un administrador acepte tu petición.'
+        );
+        onRequestSubmitted?.();
+      }
+
+      // Limpiar campos sensibles por seguridad
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: unknown) {
-      const msg = (err as { message?: string })?.message || 'Error al actualizar la contraseña. Verifique sus credenciales.';
+      const msg = (err as { message?: string })?.message || 'Error al procesar la solicitud. Verifique sus credenciales.';
       setErrorMessage(msg);
     } finally {
       setIsLoading(false);
@@ -73,10 +106,29 @@ export const SecurityCard: React.FC = () => {
         <div>
           <h2 className="text-lg font-bold text-[#0B1F3A]">Seguridad de la Cuenta</h2>
           <p className="text-xs text-slate-400">
-            Actualiza tu contraseña para mantener protegido tu acceso institucional.
+            {isAdmin 
+              ? 'Actualiza tu contraseña para mantener protegido tu acceso institucional.'
+              : 'Solicita una actualización de contraseña para tu cuenta institucional.'}
           </p>
         </div>
       </div>
+
+      {/* Banner de Solicitud Pendiente para TEACHER / STUDENT */}
+      {!isAdmin && pendingRequest && (
+        <div className="p-4 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs space-y-2 animate-fadeIn">
+          <div className="flex items-center space-x-2 font-bold text-amber-800">
+            <Clock className="w-4 h-4 text-[#D4AF37] shrink-0 animate-pulse" />
+            <span>Solicitud de cambio de contraseña en revisión</span>
+          </div>
+          <p className="text-amber-700 leading-relaxed">
+            Has enviado una solicitud de cambio de contraseña el{' '}
+            <strong className="font-mono">
+              {new Date(pendingRequest.createdAt).toLocaleDateString()} a las {new Date(pendingRequest.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </strong>
+            . Tu contraseña actual sigue activa hasta que un administrador apruebe la petición.
+          </p>
+        </div>
+      )}
 
       {/* Alertas */}
       {successMessage && (
@@ -108,14 +160,16 @@ export const SecurityCard: React.FC = () => {
               id="sec-current"
               type={showCurrentPassword ? 'text' : 'password'}
               autoComplete="current-password"
+              disabled={!isAdmin && !!pendingRequest}
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               placeholder="••••••••••••"
-              className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
+              className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] disabled:bg-slate-50 disabled:cursor-not-allowed transition-all"
             />
             <button
               type="button"
               onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+              disabled={!isAdmin && !!pendingRequest}
               className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
             >
               {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -137,14 +191,16 @@ export const SecurityCard: React.FC = () => {
                 id="sec-new"
                 type={showNewPassword ? 'text' : 'password'}
                 autoComplete="new-password"
+                disabled={!isAdmin && !!pendingRequest}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Mínimo 8 caracteres"
-                className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
+                className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] disabled:bg-slate-50 disabled:cursor-not-allowed transition-all"
               />
               <button
                 type="button"
                 onClick={() => setShowNewPassword(!showNewPassword)}
+                disabled={!isAdmin && !!pendingRequest}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
               >
                 {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -164,14 +220,16 @@ export const SecurityCard: React.FC = () => {
                 id="sec-confirm"
                 type={showConfirmPassword ? 'text' : 'password'}
                 autoComplete="new-password"
+                disabled={!isAdmin && !!pendingRequest}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all"
+                className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] disabled:bg-slate-50 disabled:cursor-not-allowed transition-all"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                disabled={!isAdmin && !!pendingRequest}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
               >
                 {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -184,7 +242,7 @@ export const SecurityCard: React.FC = () => {
         <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-start space-x-2 text-xs text-slate-600">
           <ShieldCheck className="w-4 h-4 text-[#14B8A6] shrink-0 mt-0.5" />
           <span>
-            Requisitos institucionales: La contraseña debe contener al menos 8 caracteres y no coincidir con credenciales públicas.
+            Requisitos institucionales: La contraseña debe contener al menos 8 caracteres. {!isAdmin && 'Al solicitar el cambio, se creará una petición segura para autorización.'}
           </span>
         </div>
 
@@ -192,16 +250,23 @@ export const SecurityCard: React.FC = () => {
         <div className="flex justify-end pt-2">
           <button
             type="submit"
-            disabled={isLoading}
-            className="px-5 py-2.5 bg-[#0B1F3A] hover:bg-slate-800 active:scale-95 text-white text-xs font-semibold rounded-xl transition-all flex items-center space-x-2 shadow-sm shadow-[#0B1F3A]/25 cursor-pointer"
+            disabled={isLoading || (!isAdmin && !!pendingRequest)}
+            className={`px-5 py-2.5 text-white text-xs font-semibold rounded-xl transition-all flex items-center space-x-2 shadow-sm ${
+              !isAdmin && !!pendingRequest
+                ? 'bg-slate-400 cursor-not-allowed'
+                : 'bg-[#0B1F3A] hover:bg-slate-800 active:scale-95 shadow-[#0B1F3A]/25 cursor-pointer'
+            }`}
           >
             {isLoading ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Actualizando contraseña...</span>
+                <span>{isAdmin ? 'Actualizando contraseña...' : 'Enviando solicitud...'}</span>
               </>
             ) : (
-              <span>Actualizar contraseña</span>
+              <>
+                {!isAdmin && <Send className="w-3.5 h-3.5 text-[#D4AF37]" />}
+                <span>{isAdmin ? 'Actualizar contraseña' : 'Solicitar cambio de contraseña'}</span>
+              </>
             )}
           </button>
         </div>

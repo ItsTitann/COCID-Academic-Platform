@@ -12,6 +12,8 @@ import { UsersPage } from '../pages/users/UsersPage';
 import { SimilarityPage } from '../pages/similarity/SimilarityPage';
 import { LsmPage } from '../pages/lsm/LsmPage';
 import { ScholarshipsPage } from '../pages/scholarships/ScholarshipsPage';
+import { NotificationsPage } from '../pages/notifications/NotificationsPage';
+import { AuditPage } from '../pages/audit/AuditPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 
 export const AppRoutes: React.FC = () => {
@@ -31,12 +33,25 @@ export const AppRoutes: React.FC = () => {
           {/* Perfil Institucional de Usuario (ADMIN, TEACHER, STUDENT) */}
           <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
 
+          {/* Centro de Notificaciones y Solicitudes */}
+          <Route path={ROUTES.NOTIFICATIONS} element={<NotificationsPage />} />
+
           {/* Módulo Administrativo: Solo para ADMIN */}
           <Route
             path={ROUTES.USERS}
             element={
               <AdminRoute>
                 <UsersPage />
+              </AdminRoute>
+            }
+          />
+
+          {/* Bitácora de Auditoría Permanente: Solo para ADMIN */}
+          <Route
+            path={ROUTES.AUDIT}
+            element={
+              <AdminRoute>
+                <AuditPage />
               </AdminRoute>
             }
           />

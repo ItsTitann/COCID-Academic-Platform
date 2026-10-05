@@ -206,10 +206,11 @@ model Notification {
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   message   String
-  type      NotificationType @default(SYSTEM_ALERT)
-  isRead    Boolean          @default(false)
-  relatedId String?
-  expiresAt DateTime?
+  type              NotificationType @default(SYSTEM_ALERT)
+  isRead            Boolean          @default(false)
+  dismissedFromBell Boolean          @default(false)
+  relatedId         String?
+  expiresAt         DateTime?
   createdAt DateTime         @default(now())
 
   @@index([userId])

@@ -14,7 +14,8 @@ import {
   AlertTriangle,
   CheckCheck,
   ArrowRight,
-  Loader2
+  Loader2,
+  X
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { ROUTES } from '../routes/routes.config';
@@ -108,11 +109,11 @@ export const Navbar: React.FC = () => {
     }
   }, []);
 
-  // Cargar notificaciones recientes
+  // Cargar notificaciones recientes para la campana (excluyendo las descartadas)
   const fetchRecentNotifs = useCallback(async () => {
     setIsLoadingNotifs(true);
     try {
-      const list = await notificationService.getNotifications({ limit: 5 });
+      const list = await notificationService.getNotifications({ limit: 5, dismissedFromBell: false });
       setRecentNotifs(list);
     } catch {
       // Manejo silencioso
@@ -120,6 +121,23 @@ export const Navbar: React.FC = () => {
       setIsLoadingNotifs(false);
     }
   }, []);
+
+  // Quitar notificación individual del dropdown de la campana
+  const handleDismissFromBell = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    try {
+      // 1. Quitar visualmente de forma inmediata para reactividad instantánea
+      setRecentNotifs((prev) => prev.filter((n) => n.id !== id));
+      // 2. Persistir en el backend
+      await notificationService.dismissFromBell(id);
+      // 3. Recalcular el contador de la campana
+      await fetchUnreadCount();
+    } catch (err) {
+      console.error('Error al quitar notificación de la campana:', err);
+      fetchRecentNotifs();
+      fetchUnreadCount();
+    }
+  };
 
   // Polling de notificaciones no leídas cada 45 segundos
   useEffect(() => {
@@ -286,38 +304,53 @@ export const Navbar: React.FC = () => {
                     const isPendingRequest = isAdmin && n.type === 'NEW_CHANGE_REQUEST' && (n.changeRequestStatus === 'PENDING' || n.changeRequestStatus === undefined);
 
                     return (
-                      <button
+                      <div
                         key={n.id}
-                        type="button"
-                        onClick={() => handleNotificationClick(n)}
-                        className={`w-full text-left p-3.5 flex items-start space-x-3 hover:bg-[#1F2937]/70 transition-colors cursor-pointer ${
-                          !n.isRead || isPendingRequest ? 'bg-blue-950/25' : ''
-                        }`}
+                        className="group relative"
                       >
-                        <div className="mt-0.5 shrink-0">
-                          {getNotifIcon(n.type)}
-                        </div>
-                        <div className="min-w-0 flex-1 space-y-0.5">
-                          <div className="flex items-center justify-between gap-1">
-                            <p className={`text-xs font-bold truncate ${!n.isRead || isPendingRequest ? 'text-white' : 'text-slate-300'}`}>
-                              {n.title}
-                            </p>
-                            {isPendingRequest ? (
-                              <span className="px-1.5 py-0.2 rounded bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30 text-[9px] font-bold">
-                                Pendiente
-                              </span>
-                            ) : !n.isRead ? (
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#14B8A6] shrink-0" />
-                            ) : null}
+                        <button
+                          type="button"
+                          onClick={() => handleNotificationClick(n)}
+                          className={`w-full text-left p-3.5 pr-9 flex items-start space-x-3 hover:bg-[#1F2937]/70 transition-colors cursor-pointer ${
+                            !n.isRead || isPendingRequest ? 'bg-blue-950/25' : ''
+                          }`}
+                        >
+                          <div className="mt-0.5 shrink-0">
+                            {getNotifIcon(n.type)}
                           </div>
-                          <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
-                            {n.message}
-                          </p>
-                          <span className="text-[10px] text-slate-500 font-mono block pt-0.5">
-                            {formatRelativeTime(n.createdAt)}
-                          </span>
-                        </div>
-                      </button>
+                          <div className="min-w-0 flex-1 space-y-0.5">
+                            <div className="flex items-center justify-between gap-1">
+                              <p className={`text-xs font-bold truncate ${!n.isRead || isPendingRequest ? 'text-white' : 'text-slate-300'}`}>
+                                {n.title}
+                              </p>
+                              {isPendingRequest ? (
+                                <span className="px-1.5 py-0.2 rounded bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/30 text-[9px] font-bold shrink-0">
+                                  Pendiente
+                                </span>
+                              ) : !n.isRead ? (
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#14B8A6] shrink-0" />
+                              ) : null}
+                            </div>
+                            <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                              {n.message}
+                            </p>
+                            <span className="text-[10px] text-slate-500 font-mono block pt-0.5">
+                              {formatRelativeTime(n.createdAt)}
+                            </span>
+                          </div>
+                        </button>
+
+                        {/* Botón X discreto para quitar de la campana */}
+                        <button
+                          type="button"
+                          title="Quitar de la campana"
+                          aria-label="Quitar de la campana"
+                          onClick={(e) => handleDismissFromBell(e, n.id)}
+                          className="absolute top-3 right-2.5 p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-700/80 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     );
                   })
                 )}

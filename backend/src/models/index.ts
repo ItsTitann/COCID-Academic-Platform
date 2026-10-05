@@ -124,6 +124,7 @@ export interface NotificationResponse {
   message: string;
   type: NotificationType;
   isRead: boolean;
+  dismissedFromBell: boolean;
   relatedId?: string | null;
   expiresAt?: Date | null;
   createdAt: Date;

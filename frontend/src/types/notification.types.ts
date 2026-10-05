@@ -14,6 +14,7 @@ export interface NotificationRecord {
   message: string;
   type: NotificationType;
   isRead: boolean;
+  dismissedFromBell?: boolean;
   relatedId?: string | null;
   expiresAt?: string | null;
   createdAt: string;

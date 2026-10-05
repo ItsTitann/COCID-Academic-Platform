@@ -9,11 +9,15 @@ export const notificationService = {
    */
   getNotifications: async (filters?: {
     isRead?: boolean;
+    dismissedFromBell?: boolean;
     limit?: number;
   }): Promise<NotificationRecord[]> => {
     const params = new URLSearchParams();
     if (filters?.isRead !== undefined) {
       params.append('isRead', String(filters.isRead));
+    }
+    if (filters?.dismissedFromBell !== undefined) {
+      params.append('dismissedFromBell', String(filters.dismissedFromBell));
     }
     if (filters?.limit) {
       params.append('limit', String(filters.limit));
@@ -48,6 +52,15 @@ export const notificationService = {
    */
   markAllAsRead: async (): Promise<{ count: number }> => {
     const res = await apiClient.patch<unknown, ApiResponse<{ count: number }>>('/notifications/read-all');
+    return res.data;
+  },
+
+  /**
+   * PATCH /api/notifications/:id/dismiss
+   * Oculta una notificación del dropdown de la campana.
+   */
+  dismissFromBell: async (id: string): Promise<NotificationRecord> => {
+    const res = await apiClient.patch<unknown, ApiResponse<NotificationRecord>>(`/notifications/${id}/dismiss`);
     return res.data;
   },
 };

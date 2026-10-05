@@ -1,58 +1,6 @@
 import React, { useState } from 'react';
-import { 
-  FaGlobe, 
-  FaWhatsapp, 
-  FaFacebook, 
-  FaYoutube, 
-  FaSpotify 
-} from 'react-icons/fa';
 import { ShieldCheck, Sparkles, ExternalLink, GraduationCap } from 'lucide-react';
-
-interface SocialLink {
-  name: string;
-  url: string;
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
-  color: string;
-}
-
-const socialLinks: SocialLink[] = [
-  {
-    name: 'Sitio Web Institucional',
-    url: 'https://cocid.mx/',
-    icon: FaGlobe,
-    color: '#14B8A6',
-  },
-  {
-    name: 'WhatsApp Atención Directa',
-    url: 'https://api.whatsapp.com/send?phone=527353392795',
-    icon: FaWhatsapp,
-    color: '#25D366',
-  },
-  {
-    name: 'Facebook',
-    url: 'https://www.facebook.com/Colegio.Cientifico.de.Datos/?ref=bookmarks',
-    icon: FaFacebook,
-    color: '#1877F2',
-  },
-  {
-    name: 'Canal de YouTube',
-    url: 'https://www.youtube.com/channel/UCdjx8KJ00fOIKX2q0EYSr4A',
-    icon: FaYoutube,
-    color: '#FF0000',
-  },
-  {
-    name: 'Spotify Podcast Institucional',
-    url: 'https://open.spotify.com/show/5YprrEYBQlmgVsaVqbnmEY',
-    icon: FaSpotify,
-    color: '#1DB954',
-  },
-  {
-    name: 'Convenios Institucionales',
-    url: 'https://posgrados.cocid.edu.mx/convenios/',
-    icon: FaGlobe,
-    color: '#D4AF37',
-  },
-];
+import { socialLinks } from '../../config/socialLinks';
 
 export const Footer: React.FC = () => {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
